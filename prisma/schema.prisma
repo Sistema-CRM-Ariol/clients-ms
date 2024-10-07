@@ -28,22 +28,23 @@ model Clientes {
   correos   String[]
   telefonos String[]
 
-  empresa   Empresas? @relation(fields: [empresaId], references: [id])
+  empresa   Company? @relation(fields: [empresaId], references: [id])
   empresaId String?
-
-  createdAt DateTime    @default(now())
-  updatedAt DateTime    @updatedAt
-
-}
-
-model Empresas {
-  id        String  @id @default(uuid())
-  nombre    String
-  detalles  String?
-  direccion String?
-
-  clientes Clientes[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model Company {
+  id          String  @id @default(uuid())
+  name        String
+  description String?
+  direction   String?
+
+  clients Clientes[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("companies")
 }

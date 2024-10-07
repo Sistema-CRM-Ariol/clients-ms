@@ -28,7 +28,7 @@ export class CreateClientDto {
     correos?: string[];
 
     @IsOptional()
-    empresaId?: string;
+    companyId?: string;
 
     @IsOptional()
     telefonos?: string[];
