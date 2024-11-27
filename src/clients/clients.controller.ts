@@ -20,7 +20,7 @@ export class ClientsController {
   }
 
   @MessagePattern('findOneClient')
-  findOne(@Payload() id: number) {
+  findOne(@Payload() id: string) {
     return this.clientsService.findOne(id);
   }
 

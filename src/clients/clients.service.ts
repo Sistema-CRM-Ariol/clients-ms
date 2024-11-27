@@ -36,9 +36,9 @@ export class ClientsService extends PrismaClient implements OnModuleInit {
     const { page, limit, search } = paginationDto;
     const totalClients = await this.clientes.count();
 
-    
-    
-    if( !search ){
+
+
+    if (!search) {
       const lastPage = Math.ceil(totalClients / limit);
 
       return {
@@ -60,24 +60,26 @@ export class ClientsService extends PrismaClient implements OnModuleInit {
       }
     }
 
-    const totalPages = await this.clientes.count({where: {
-      OR: [
-        {
-          nombre: {
-            contains: search
+    const totalPages = await this.clientes.count({
+      where: {
+        OR: [
+          {
+            nombre: {
+              contains: search
+            },
           },
-        },
-        {
-          nit: { contains: search }
-        },
-        { correos: { hasSome: [search] } }
-        
-      ]
-      
-    }});
+          {
+            nit: { contains: search }
+          },
+          { correos: { hasSome: [search] } }
+
+        ]
+
+      }
+    });
 
     const lastPage = Math.ceil(totalPages / limit);
-      
+
     return {
       clientes: await this.clientes.findMany({
         where: {
@@ -91,9 +93,9 @@ export class ClientsService extends PrismaClient implements OnModuleInit {
               nit: { contains: search }
             },
             { correos: { hasSome: [search] } }
-            
+
           ]
-          
+
         },
         skip: (page - 1) * limit,
         take: limit,
@@ -113,8 +115,23 @@ export class ClientsService extends PrismaClient implements OnModuleInit {
 
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} client`;
+  async findOne(id: string) {
+    try {
+
+      const client = await this.clientes.findFirstOrThrow({
+        where: { id: id },
+        include: {
+          empresa: true
+        }
+      })
+
+      return { client };
+
+    } catch (error) {
+    
+      throw new NotFoundException("No se encontro el cliente");
+    }
+
   }
 
   async update(id: string, updateClientDto: UpdateClientDto) {
