@@ -1,36 +1,37 @@
 import { IsArray, IsOptional, IsString } from 'class-validator';
 
 export class CreateClientDto {
-    
-    @IsString()
-    cargo: string;
+    @IsString({ message: "El nombre es requerido" })
+    name:        string;
 
-    @IsString()
-    departamento: string;
+    @IsString({ message: "Debe asignar un cargo" })
+    position:    string;
     
-    @IsString()
-    direccion: string;
+    @IsString({ message: "Debe agregar un departamento" })
+    departament: string;
 
-    @IsString()
-    factura: string;
-    
-    @IsString()
-    nit: string
+    @IsString({ message: "Agregue la provincia" })
+    province:    string;
 
-    @IsString()
-    nombre: string
-    
-    @IsString()
-    provincia: string
-    
+    @IsString({ message: "Agregue la direccion" })
+    address:     string;
+
+    @IsString({ message: "Debe asignar un nombre para la factura" })
+    invoice:     string;
+
+    @IsString({ message: "Debe agregar un NIT" })
+    nit:         string;
+
+    @IsString({ each: true })
     @IsOptional()
-    @IsArray({})
-    correos?: string[];
+    emails?:      string[];
 
+    @IsString({ each: true })
     @IsOptional()
-    companyId?: string;
+    phones?:      string[];
 
+    @IsString({ message: "Debe asigar una empresa" })
     @IsOptional()
-    telefonos?: string[];
+    companyId?: string | never;
 
 }

@@ -1,26 +1,22 @@
-import { Injectable, Logger, NotFoundException, OnModuleInit } from '@nestjs/common';
+import { HttpStatus, Injectable, Logger, NotFoundException, OnModuleInit } from '@nestjs/common';
 import { CreateClientDto } from './dto/create-client.dto';
 import { UpdateClientDto } from './dto/update-client.dto';
 import { PrismaClient } from '@prisma/client';
 import { PaginationDto } from 'src/common';
 import { clientsSeeder } from 'src/data/clients.seeder';
+import { PrismaService } from 'src/prisma/prisma.service';
+import { RpcException } from '@nestjs/microservices';
 
 @Injectable()
-export class ClientsService extends PrismaClient implements OnModuleInit {
-  private readonly logger = new Logger('ClientsService');
+export class ClientsService {
+  constructor(private prisma: PrismaService) { }
 
-  onModuleInit() {
-    this.$connect();
-    this.logger.log('Clients Database connected');
-  }
 
   async create(createClientDto: CreateClientDto) {
-    const client = await this.clientes.create({
+
+    const client = await this.prisma.clients.create({
       data: {
         ...createClientDto,
-      },
-      include: {
-        empresa: true,
       }
     })
 
@@ -34,24 +30,28 @@ export class ClientsService extends PrismaClient implements OnModuleInit {
   async findAll(paginationDto: PaginationDto) {
 
     const { page, limit, search } = paginationDto;
-    const totalClients = await this.clientes.count();
+    const totalClients = await this.prisma.clients.count();
 
 
 
     if (!search) {
       const lastPage = Math.ceil(totalClients / limit);
 
+      const clients = await this.prisma.clients.findMany({
+        skip: (page - 1) * limit,
+        take: limit,
+        select: {
+          companyId: false,
+          name: true, address: true, emails: true, phones: true, nit: true, createdAt: true, id: true, position: true,
+        },
+        orderBy: {
+          createdAt: "desc"
+        }
+      })
+
+
       return {
-        clientes: await this.clientes.findMany({
-          skip: (page - 1) * limit,
-          take: limit,
-          include: {
-            empresa: true,
-          },
-          orderBy: {
-            createdAt: "desc"
-          }
-        }),
+        clients,
         meta: {
           total: totalClients,
           page: page,
@@ -60,18 +60,18 @@ export class ClientsService extends PrismaClient implements OnModuleInit {
       }
     }
 
-    const totalPages = await this.clientes.count({
+    const totalPages = await this.prisma.clients.count({
       where: {
         OR: [
           {
-            nombre: {
+            name: {
               contains: search
             },
           },
           {
             nit: { contains: search }
           },
-          { correos: { hasSome: [search] } }
+          { emails: { hasSome: [search] } }
 
         ]
 
@@ -81,26 +81,27 @@ export class ClientsService extends PrismaClient implements OnModuleInit {
     const lastPage = Math.ceil(totalPages / limit);
 
     return {
-      clientes: await this.clientes.findMany({
+      clients: await this.prisma.clients.findMany({
         where: {
           OR: [
             {
-              nombre: {
+              name: {
                 contains: search
               },
             },
             {
               nit: { contains: search }
             },
-            { correos: { hasSome: [search] } }
+            { emails: { hasSome: [search] } }
 
           ]
 
         },
         skip: (page - 1) * limit,
         take: limit,
-        include: {
-          empresa: true,
+        select: {
+          companyId: false,
+          name: true, address: true, emails: true, phones: true, nit: true, createdAt: true, id: true, position: true,
         },
         orderBy: {
           createdAt: "desc"
@@ -116,32 +117,32 @@ export class ClientsService extends PrismaClient implements OnModuleInit {
   }
 
   async findOne(id: string) {
-    try {
 
-      const client = await this.clientes.findFirstOrThrow({
-        where: { id: id },
-        include: {
-          empresa: true
-        }
+    const client = await this.prisma.clients.findFirst({
+      where: { id: id },
+      include: {
+        company: true,
+      }
+    });
+
+    if (!client) {
+      throw new RpcException({
+        status: HttpStatus.NOT_FOUND,
+        message: "No se encontro el usuario"
       })
-
-      return { client };
-
-    } catch (error) {
-    
-      throw new NotFoundException("No se encontro el cliente");
     }
 
+    return { client };
   }
 
   async update(id: string, updateClientDto: UpdateClientDto) {
     try {
 
-      const client = await this.clientes.findFirstOrThrow({
+      const client = await this.prisma.clients.findFirstOrThrow({
         where: { id: id },
       })
 
-      await this.clientes.update({
+      await this.prisma.clients.update({
         where: {
           id: id,
         },
@@ -158,18 +159,18 @@ export class ClientsService extends PrismaClient implements OnModuleInit {
   }
 
   async remove(id: string) {
-    const cliente = await this.clientes.delete({
+    const client = await this.prisma.clients.delete({
       where: { id }
     });
     return {
-      message: `Se elimino el cliente: ${cliente.nombre}`,
+      message: `Se elimino el cliente: ${client.name}`,
     };
   }
 
   async seed() {
-    await this.clientes.deleteMany();
+    await this.prisma.clients.deleteMany();
 
-    await this.clientes.createMany({
+    await this.prisma.clients.createMany({
       data: clientsSeeder
     })
 

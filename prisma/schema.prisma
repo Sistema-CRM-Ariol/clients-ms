@@ -13,26 +13,25 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Clientes {
-  id     String @id @default(uuid())
-  nombre String
-  cargo  String
+model Clients {
+  id          String   @id @default(uuid())
+  name        String
+  position    String
+  departament String
+  province    String
+  address     String
+  invoice     String
+  nit         String
+  emails      String[]
+  phones      String[]
 
-  departamento String
-  provincia    String
-
-  direccion String
-  factura   String
-  nit       String
-
-  correos   String[]
-  telefonos String[]
-
-  empresa   Company? @relation(fields: [empresaId], references: [id])
-  empresaId String?
+  company   Company? @relation(fields: [companyId], references: [id])
+  companyId String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@map("clients")
 }
 
 model Company {
@@ -41,7 +40,7 @@ model Company {
   description String?
   direction   String?
 
-  clients Clientes[]
+  clients Clients[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
