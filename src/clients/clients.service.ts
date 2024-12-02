@@ -14,15 +14,41 @@ export class ClientsService {
 
   async create(createClientDto: CreateClientDto) {
 
-    const client = await this.prisma.clients.create({
-      data: {
-        ...createClientDto,
-      }
+
+    const clientExists = await this.prisma.clients.findFirst({
+      where: {
+        OR: [
+          { nit: createClientDto.nit },
+
+        ]
+      },
     })
 
-    return {
-      message: "Se creo el cliente exitosamente",
-      client
+    if (clientExists) {
+      throw new RpcException({
+        message: "Ya registro un cliente con este NIT",
+        status: HttpStatus.BAD_REQUEST
+      });
+    }
+
+    
+    try {
+
+      const client = await this.prisma.clients.create({
+        data: {
+          ...createClientDto,
+        }
+      })
+
+      return {
+        message: "Se creo el cliente exitosamente",
+        client
+      }
+    } catch (error) {
+
+      console.log({ error })
+
+      throw new RpcException(error);
     }
 
   }
@@ -179,29 +205,12 @@ export class ClientsService {
     }
   }
 
-  async getClientsStats(period: 'daily' | 'weekly' | 'monthly' | 'yearly') {
+  async getMonthlyClientsStats() {
     const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
 
-    let startDate: Date;
-    switch (period) {
-      case 'daily':
-        startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-        break;
-      case 'weekly':
-        const firstDayOfWeek = now.getDate() - now.getDay(); // Asume domingo como primer día
-        startDate = new Date(now.getFullYear(), now.getMonth(), firstDayOfWeek);
-        break;
-      case 'monthly':
-        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
-        break;
-      case 'yearly':
-        startDate = new Date(now.getFullYear(), 0, 1);
-        break;
-      default:
-        throw new Error('Invalid period');
-    }
-
-    // Obtener usuarios registrados agrupados por fecha
+    // Obtener usuarios registrados agrupados por fecha dentro del mes actual
     const users = await this.prisma.clients.groupBy({
       by: ['createdAt'],
       _count: {
@@ -209,18 +218,19 @@ export class ClientsService {
       },
       where: {
         createdAt: {
-          gte: startDate,
-          lte: now,
+          gte: startOfMonth,
+          lte: endOfMonth,
         },
       },
     });
 
-    // Transformar datos
+    // Transformar datos para obtener un arreglo de fechas y sus respectivos conteos
+    const daysInMonth = endOfMonth.getDate();
     const dates: string[] = [];
     const numberOfClients: number[] = [];
 
-    for (let i = new Date(startDate); i <= now; i.setDate(i.getDate() + 1)) {
-      const date = i.toISOString().split('T')[0];
+    for (let i = 1; i <= daysInMonth; i++) {
+      const date = new Date(now.getFullYear(), now.getMonth(), i).toISOString().split('T')[0];
       dates.push(date);
 
       const count =
@@ -232,4 +242,5 @@ export class ClientsService {
 
     return { dates, numberOfClients };
   }
+
 }

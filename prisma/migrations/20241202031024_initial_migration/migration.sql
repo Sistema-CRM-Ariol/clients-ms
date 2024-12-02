@@ -1,15 +1,3 @@
-/*
-  Warnings:
-
-  - You are about to drop the `Clientes` table. If the table is not empty, all the data it contains will be lost.
-
-*/
--- DropForeignKey
-ALTER TABLE "Clientes" DROP CONSTRAINT "Clientes_empresaId_fkey";
-
--- DropTable
-DROP TABLE "Clientes";
-
 -- CreateTable
 CREATE TABLE "clients" (
     "id" TEXT NOT NULL,
@@ -22,12 +10,24 @@ CREATE TABLE "clients" (
     "nit" TEXT NOT NULL,
     "emails" TEXT[],
     "phones" TEXT[],
-    "companyId" TEXT NOT NULL,
+    "companyId" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "clients_pkey" PRIMARY KEY ("id")
 );
 
+-- CreateTable
+CREATE TABLE "companies" (
+    "id" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "description" TEXT,
+    "direction" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "companies_pkey" PRIMARY KEY ("id")
+);
+
 -- AddForeignKey
-ALTER TABLE "clients" ADD CONSTRAINT "clients_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "companies"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "clients" ADD CONSTRAINT "clients_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "companies"("id") ON DELETE SET NULL ON UPDATE CASCADE;

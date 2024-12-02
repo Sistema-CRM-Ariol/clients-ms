@@ -40,7 +40,7 @@ export class ClientsController {
   }
 
   @MessagePattern('clientsStadistics')
-  getClientsStats(@Payload() period: "daily" | "weekly" | "monthly" | "yearly") {
-    return this.clientsService.getClientsStats(period);
+  getClientsStats() {
+    return this.clientsService.getMonthlyClientsStats();
   }
 }
