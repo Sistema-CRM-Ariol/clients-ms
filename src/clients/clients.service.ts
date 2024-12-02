@@ -178,4 +178,58 @@ export class ClientsService {
       message: "Se insertaron los 50 usuarios de prueba"
     }
   }
+
+  async getClientsStats(period: 'daily' | 'weekly' | 'monthly' | 'yearly') {
+    const now = new Date();
+
+    let startDate: Date;
+    switch (period) {
+      case 'daily':
+        startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        break;
+      case 'weekly':
+        const firstDayOfWeek = now.getDate() - now.getDay(); // Asume domingo como primer día
+        startDate = new Date(now.getFullYear(), now.getMonth(), firstDayOfWeek);
+        break;
+      case 'monthly':
+        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+        break;
+      case 'yearly':
+        startDate = new Date(now.getFullYear(), 0, 1);
+        break;
+      default:
+        throw new Error('Invalid period');
+    }
+
+    // Obtener usuarios registrados agrupados por fecha
+    const users = await this.prisma.clients.groupBy({
+      by: ['createdAt'],
+      _count: {
+        createdAt: true,
+      },
+      where: {
+        createdAt: {
+          gte: startDate,
+          lte: now,
+        },
+      },
+    });
+
+    // Transformar datos
+    const dates: string[] = [];
+    const numberOfClients: number[] = [];
+
+    for (let i = new Date(startDate); i <= now; i.setDate(i.getDate() + 1)) {
+      const date = i.toISOString().split('T')[0];
+      dates.push(date);
+
+      const count =
+        users.find((u) => new Date(u.createdAt).toISOString().split('T')[0] === date)?._count
+          .createdAt || 0;
+
+      numberOfClients.push(count);
+    }
+
+    return { dates, numberOfClients };
+  }
 }

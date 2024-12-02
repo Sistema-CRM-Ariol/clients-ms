@@ -1,5 +1,5 @@
-import { Controller, Query } from '@nestjs/common';
-import { MessagePattern, Payload } from '@nestjs/microservices';
+import { Controller, ParseEnumPipe, Query } from '@nestjs/common';
+import { Ctx, MessagePattern, NatsContext, Payload } from '@nestjs/microservices';
 import { ClientsService } from './clients.service';
 import { CreateClientDto } from './dto/create-client.dto';
 import { UpdateClientDto } from './dto/update-client.dto';
@@ -8,6 +8,11 @@ import { PaginationDto } from 'src/common';
 @Controller()
 export class ClientsController {
   constructor(private readonly clientsService: ClientsService) {}
+
+  @MessagePattern('seedClient')
+  seed() {
+    return this.clientsService.seed();
+  }
 
   @MessagePattern('createClient')
   create(@Payload() createClientDto: CreateClientDto) {
@@ -34,8 +39,8 @@ export class ClientsController {
     return this.clientsService.remove(id);
   }
 
-  @MessagePattern('seedClient')
-  seed() {
-    return this.clientsService.seed();
+  @MessagePattern('clientsStadistics')
+  getClientsStats(@Payload() period: "daily" | "weekly" | "monthly" | "yearly") {
+    return this.clientsService.getClientsStats(period);
   }
 }
