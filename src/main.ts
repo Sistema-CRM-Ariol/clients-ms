@@ -5,9 +5,7 @@ import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import { envs } from './config';
 
 async function bootstrap() {
-  const logger = new Logger('Main');
-
-  console.log(envs.natsServers)
+  const logger = new Logger('Client MS');
 
   const app = await NestFactory.createMicroservice<MicroserviceOptions>(
     AppModule,
@@ -27,6 +25,7 @@ async function bootstrap() {
   );
 
   await app.listen();
-  logger.log(`Clients Microservice running on port ${ envs.port }`);
+  
+  logger.log(`Clients Microservice running on NATS server: ${envs.natsServers}`);
 }
 bootstrap();

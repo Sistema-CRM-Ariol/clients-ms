@@ -14,7 +14,6 @@ export class ClientsService {
 
   async create(createClientDto: CreateClientDto) {
 
-
     const clientExists = await this.prisma.clients.findFirst({
       where: {
         OR: [
@@ -31,7 +30,7 @@ export class ClientsService {
       });
     }
 
-    
+
     try {
 
       const client = await this.prisma.clients.create({
@@ -58,23 +57,18 @@ export class ClientsService {
     const { page, limit, search } = paginationDto;
     const totalClients = await this.prisma.clients.count();
 
-
-
     if (!search) {
       const lastPage = Math.ceil(totalClients / limit);
 
       const clients = await this.prisma.clients.findMany({
-        skip: (page - 1) * limit,
         take: limit,
+        skip: (page - 1) * limit,
+        orderBy: { createdAt: "desc" },
         select: {
           companyId: false,
           name: true, address: true, emails: true, phones: true, nit: true, createdAt: true, id: true, position: true,
         },
-        orderBy: {
-          createdAt: "desc"
-        }
       })
-
 
       return {
         clients,
@@ -89,18 +83,10 @@ export class ClientsService {
     const totalPages = await this.prisma.clients.count({
       where: {
         OR: [
-          {
-            name: {
-              contains: search
-            },
-          },
-          {
-            nit: { contains: search }
-          },
+          { name: { contains: search } },
+          { nit: { contains: search } },
           { emails: { hasSome: [search] } }
-
         ]
-
       }
     });
 
@@ -110,28 +96,18 @@ export class ClientsService {
       clients: await this.prisma.clients.findMany({
         where: {
           OR: [
-            {
-              name: {
-                contains: search
-              },
-            },
-            {
-              nit: { contains: search }
-            },
+            { name: { contains: search } },
+            { nit: { contains: search } },
             { emails: { hasSome: [search] } }
-
           ]
-
         },
-        skip: (page - 1) * limit,
         take: limit,
+        skip: (page - 1) * limit,
+        orderBy: { createdAt: "desc" },
         select: {
           companyId: false,
           name: true, address: true, emails: true, phones: true, nit: true, createdAt: true, id: true, position: true,
         },
-        orderBy: {
-          createdAt: "desc"
-        }
       }),
       meta: {
         total: totalClients,
@@ -139,7 +115,6 @@ export class ClientsService {
         lastPage: lastPage,
       }
     }
-
   }
 
   async findOne(id: string) {

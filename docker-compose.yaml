@@ -4,11 +4,10 @@ services:
   postgres:
     image: postgres:13.5
     container_name: clients_database
-    restart: always
     environment:
-      POSTGRES_DB: ${DB_NAME}
-      POSTGRES_USER: ${DB_USER}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: clients
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password
 
     ports:
       - '5433:5432'
