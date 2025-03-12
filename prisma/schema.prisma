@@ -25,6 +25,8 @@ model Clients {
   emails      String[]
   phones      String[]
 
+  isActive Boolean @default(true)
+
   company   Company? @relation(fields: [companyId], references: [id])
   companyId String?
 
@@ -39,6 +41,8 @@ model Company {
   name        String
   description String?
   direction   String?
+
+  isActive Boolean @default(true)
 
   clients Clients[]
 
