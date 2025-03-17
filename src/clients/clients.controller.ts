@@ -4,6 +4,7 @@ import { ClientsService } from './clients.service';
 import { CreateClientDto } from './dto/create-client.dto';
 import { UpdateClientDto } from './dto/update-client.dto';
 import { PaginationDto } from 'src/common';
+import { FilterPaginationDto } from 'src/common/dto/filter-pagination.dto';
 
 @Controller()
 export class ClientsController {
@@ -20,8 +21,8 @@ export class ClientsController {
   }
 
   @MessagePattern('findAllClients')
-  findAll(@Payload() paginationDto: PaginationDto) {
-    return this.clientsService.findAll(paginationDto);
+  findAll(@Payload() filterPaginationDto: FilterPaginationDto) {
+    return this.clientsService.findAll(filterPaginationDto);
   }
 
   @MessagePattern('findOneClient')

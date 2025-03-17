@@ -1,11 +1,10 @@
-import { HttpStatus, Injectable, Logger, NotFoundException, OnModuleInit } from '@nestjs/common';
+import { HttpStatus, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateClientDto } from './dto/create-client.dto';
 import { UpdateClientDto } from './dto/update-client.dto';
-import { PrismaClient } from '@prisma/client';
-import { PaginationDto } from 'src/common';
 import { clientsSeeder } from 'src/data/clients.seeder';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { RpcException } from '@nestjs/microservices';
+import { FilterPaginationDto } from 'src/common/dto/filter-pagination.dto';
 
 @Injectable()
 export class ClientsService {
@@ -45,76 +44,64 @@ export class ClientsService {
       }
     } catch (error) {
 
-      console.log({ error })
-
       throw new RpcException(error);
     }
 
   }
 
-  async findAll(paginationDto: PaginationDto) {
+  async findAll(filterPaginationDto: FilterPaginationDto) {
+    const { page, limit, search, isActive } = filterPaginationDto;
 
-    const { page, limit, search } = paginationDto;
-    const totalClients = await this.prisma.clients.count();
+    const filters: any[] = [];
 
-    if (!search) {
-      const lastPage = Math.ceil(totalClients / limit);
-
-      const clients = await this.prisma.clients.findMany({
-        take: limit,
-        skip: (page - 1) * limit,
-        orderBy: { createdAt: "desc" },
-        select: {
-          companyId: false,
-          name: true, address: true, emails: true, phones: true, nit: true, createdAt: true, id: true, position: true,
-        },
-      })
-
-      return {
-        clients,
-        meta: {
-          total: totalClients,
-          page: page,
-          lastPage: lastPage,
-        }
-      }
+    if (search) {
+      filters.push({
+        OR: [
+          { nombre: { contains: search, mode: 'insensitive' } },
+        ],
+      });
     }
 
-    const totalPages = await this.prisma.clients.count({
-      where: {
-        OR: [
-          { name: { contains: search } },
-          { nit: { contains: search } },
-          { emails: { hasSome: [search] } }
-        ]
-      }
-    });
+    // Si status viene definido, lo agregamos
+    if (isActive !== undefined) {
+      filters.push({ isActive });
+    }
 
-    const lastPage = Math.ceil(totalPages / limit);
+    // Si existen filtros, los combinamos en un AND; de lo contrario, la consulta no tiene filtro
+    const whereClause = filters.length > 0 ? { AND: filters } : {};
+
+    // Ejecutamos la consulta de conteo y búsqueda con el mismo whereClause
+    const [totalClients, clients] = await Promise.all([
+      this.prisma.clients.count({
+        where: whereClause,
+      }),
+      this.prisma.clients.findMany({
+        take: limit,
+        skip: (page! - 1) * limit!,
+        orderBy: { updatedAt: 'desc' },
+        where: whereClause,
+
+        include: {
+          company: {
+            select: {
+              name: true
+            }
+          },
+        },
+        
+      }),
+    ]);
+
+    const lastPage = Math.ceil(totalClients / limit!);
 
     return {
-      clients: await this.prisma.clients.findMany({
-        where: {
-          OR: [
-            { name: { contains: search } },
-            { nit: { contains: search } },
-            { emails: { hasSome: [search] } }
-          ]
-        },
-        take: limit,
-        skip: (page - 1) * limit,
-        orderBy: { createdAt: "desc" },
-        select: {
-          companyId: false,
-          name: true, address: true, emails: true, phones: true, nit: true, createdAt: true, id: true, position: true,
-        },
-      }),
+      clients,
       meta: {
+        page,
+        lastPage,
         total: totalClients,
-        page: page,
-        lastPage: lastPage,
-      }
-    }
+      },
+    };
   }
 
   async findOne(id: string) {
