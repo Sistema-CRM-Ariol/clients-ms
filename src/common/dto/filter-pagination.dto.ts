@@ -15,7 +15,6 @@ export class FilterPaginationDto {
 
     @IsOptional()
     @IsString()
-    @Type(() => Number)
     search?: string | undefined;
 
     @IsOptional()

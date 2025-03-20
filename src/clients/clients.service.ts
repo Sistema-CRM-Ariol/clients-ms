@@ -57,7 +57,9 @@ export class ClientsService {
     if (search) {
       filters.push({
         OR: [
-          { nombre: { contains: search, mode: 'insensitive' } },
+          { name: { contains: search, mode: 'insensitive' } },
+          { nit: { contains: search, mode: 'insensitive' } },
+          { invoice: { contains: search, mode: 'insensitive' } },
         ],
       });
     }
@@ -79,16 +81,19 @@ export class ClientsService {
         take: limit,
         skip: (page! - 1) * limit!,
         orderBy: { updatedAt: 'desc' },
-        where: whereClause,
-
-        include: {
-          company: {
-            select: {
-              name: true
-            }
-          },
+        where: { ...whereClause, },
+        select: {
+          id: true,
+          nit: true,
+          name: true,
+          address: true,
+          emails: true,
+          phones: true,
+          position: true,
+          isActive: true,
+          createdAt: true,
         },
-        
+
       }),
     ]);
 
@@ -122,27 +127,41 @@ export class ClientsService {
 
     return { client };
   }
-
+  
   async update(id: string, updateClientDto: UpdateClientDto) {
     try {
-
-      const client = await this.prisma.clients.findFirstOrThrow({
-        where: { id: id },
-      })
-
-      await this.prisma.clients.update({
+      const client = await this.prisma.clients.update({
         where: {
-          id: id,
+          id: id
         },
         data: updateClientDto
-      })
+      });
 
       return {
-        message: "Se actualizo la informacion del cliente",
         client,
+        message: 'Cliente actualizado'
       };
+
     } catch (error) {
-      throw new NotFoundException("No se encontro el cliente");
+
+      if (error.code === 'P2002' && error.meta?.target?.includes('nit')) {
+        throw new RpcException({
+          statusCode: 400,
+          message: 'El numero de documento esta siendo utilizado'
+        })
+      }
+
+      if (error.code === 'P2025') {
+        throw new RpcException({
+          statusCode: 404,
+          message: 'Persona no encontrada'
+        })
+      }
+
+      throw new RpcException({
+        statusCode: 500,
+        message: 'Error al actualizar la persona'
+      })
     }
   }
 

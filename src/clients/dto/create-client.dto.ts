@@ -1,4 +1,4 @@
-import { IsArray, IsOptional, IsString } from 'class-validator';
+import { IsArray, IsBoolean, IsOptional, IsString } from 'class-validator';
 
 export class CreateClientDto {
     @IsString({ message: "El nombre es requerido" })
@@ -34,4 +34,7 @@ export class CreateClientDto {
     @IsOptional()
     companyId?: string | never;
 
+    @IsBoolean()
+    @IsOptional()
+    isActive?: boolean | undefined;
 }
