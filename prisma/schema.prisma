@@ -16,6 +16,7 @@ datasource db {
 model Clients {
   id          String   @id @default(uuid())
   name        String
+  lastname    String
   position    String
   departament String
   province    String
