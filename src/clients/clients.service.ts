@@ -274,6 +274,47 @@ export class ClientsService {
     }
 
 
+    async getDashboardData() {
+        try {
+            const now = new Date();
+            const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 5, 1);
+
+            // Chart de nuevos clientes en los últimos 6 meses
+            const recentClients = await this.prisma.clients.findMany({
+                where: { createdAt: { gte: sixMonthsAgo } },
+                select: { createdAt: true },
+            });
+
+            const monthlyMap: Record<string, number> = {};
+            for (let i = 5; i >= 0; i--) {
+                const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+                const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+                monthlyMap[key] = 0;
+            }
+            for (const client of recentClients) {
+                const key = `${client.createdAt.getFullYear()}-${String(client.createdAt.getMonth() + 1).padStart(2, '0')}`;
+                if (monthlyMap[key] !== undefined) monthlyMap[key]++;
+            }
+            const sixMonthChart = Object.entries(monthlyMap).map(([month, count]) => ({ month, count }));
+
+            // Top 5 clientes más recientes activos
+            const topClients = await this.prisma.clients.findMany({
+                where: { isActive: true },
+                orderBy: { createdAt: 'desc' },
+                take: 5,
+                select: {
+                    id: true, name: true, lastname: true,
+                    companyName: true, city: true, email1: true,
+                    phone1: true, createdAt: true,
+                },
+            });
+
+            return { sixMonthChart, topClients };
+        } catch (error) {
+            throw new RpcException(error);
+        }
+    }
+
     async createFromLead(createClientFromLeadDto: CreateClientFromLeadDto) {
 
         const clientExists = await this.prisma.clients.findFirst({

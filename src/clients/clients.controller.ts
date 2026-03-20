@@ -51,4 +51,9 @@ export class ClientsController {
         return this.clientsService.stats();
     }
 
+    @MessagePattern('clients.dashboard')
+    getDashboardData() {
+        return this.clientsService.getDashboardData();
+    }
+
 }
