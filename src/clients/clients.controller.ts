@@ -42,7 +42,7 @@ export class ClientsController {
     }
 
     @MessagePattern('clients.createFromLead')
-    createFromLead(@Payload() createClientFromLead: CreateClientFromLeadDto) {
+    createFromLead(@Payload() createClientFromLead: any) {
         return this.clientsService.createFromLead(createClientFromLead);
     }
 

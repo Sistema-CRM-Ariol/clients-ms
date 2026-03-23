@@ -337,6 +337,8 @@ export class ClientsService {
         const client = await this.prisma.clients.create({
             data: {
                 ...createClientFromLeadDto,
+                company: undefined,
+                companyName: createClientFromLeadDto.company,
                 isActive: true,
             }
         })
